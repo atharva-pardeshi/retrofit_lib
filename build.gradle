@@ -4,32 +4,26 @@ import org.gradle.internal.jvm.Jvm
 buildscript {
   dependencies {
     classpath libs.androidPlugin
-    classpath libs.robovmPlugin
+    classpath libs.kotlin.gradlePlugin
+    classpath libs.kotlin.serializationPlugin
+    classpath libs.dokkaPlugin
+    classpath libs.gradleMavenPublishPlugin
+    classpath libs.spotlessPlugin
+    classpath libs.errorpronePlugin
+    classpath libs.animalSnifferPlugin
+    classpath libs.protobufPlugin
   }
   repositories {
     mavenCentral()
     google()
-    jcenter()
     gradlePluginPortal()
   }
-}
-
-plugins {
-  alias(libs.plugins.kotlin.jvm) apply false
-  alias(libs.plugins.kotlin.serialization) apply false
-  alias(libs.plugins.dokka) apply false
-  alias(libs.plugins.errorprone) apply false
-  alias(libs.plugins.mavenPublish) apply false
-  alias(libs.plugins.protobuf) apply false
-  alias(libs.plugins.animalsniffer) apply false
-  alias(libs.plugins.spotless) apply false
 }
 
 subprojects {
   repositories {
     mavenCentral()
     google()
-    jcenter()
   }
 
   tasks.withType(JavaCompile).configureEach { task ->
@@ -67,6 +61,7 @@ subprojects {
       check('UnusedMethod', CheckSeverity.ERROR)
       check('UnusedNestedClass', CheckSeverity.ERROR)
       check('UnusedVariable', CheckSeverity.ERROR)
+      check('WildcardImport', CheckSeverity.ERROR)
     }
   }
 
@@ -89,32 +84,18 @@ subprojects {
       }
     }
 
-    plugins.apply(libs.plugins.spotless.get().pluginId)
+    plugins.apply('com.diffplug.spotless')
     spotless {
       java {
         googleJavaFormat(libs.googleJavaFormat.get().version)
           .formatJavadoc(false)
         removeUnusedImports()
-        target 'src/*/java/**/*.java'
+        target 'src/*/java*/**/*.java'
       }
       kotlin {
         ktlint(libs.ktlint.get().version)
         target 'src/**/*.kt'
       }
-    }
-  }
-
-  plugins.withType(com.android.build.gradle.BasePlugin).configureEach { plugin ->
-    // Can remove this once https://issuetracker.google.com/issues/260059413 is fixed.
-    plugin.extension.compileOptions {
-      sourceCompatibility = JavaVersion.VERSION_1_8
-      targetCompatibility = JavaVersion.VERSION_1_8
-    }
-  }
-
-  pluginManager.withPlugin("com.vanniktech.maven.publish") {
-    mavenPublish {
-      sonatypeHost = "S01"
     }
   }
 }

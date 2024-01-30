@@ -1,21 +1,16 @@
-plugins {
-  id 'java-platform'
-  alias libs.plugins.mavenPublish
-}
+import com.vanniktech.maven.publish.JavaPlatform
 
-// TODO: This could be simplified after updating maven publish plugin, see https://vanniktech.github.io/gradle-maven-publish-plugin/what/#java-platform.
-publishing {
-  publications {
-    maven(MavenPublication) {
-      from components.javaPlatform
-    }
-  }
+apply plugin: 'java-platform'
+apply plugin: 'com.vanniktech.maven.publish'
+
+mavenPublishing {
+  configure(new JavaPlatform())
 }
 
 dependencies {
   constraints {
     rootProject.subprojects { subproject ->
-      subproject.plugins.withId(libs.plugins.mavenPublish.get().pluginId) {
+      subproject.plugins.withId('com.vanniktech.maven.publish') {
         // Exclude self project from BOM.
         if (subproject != this.project) {
           api subproject
