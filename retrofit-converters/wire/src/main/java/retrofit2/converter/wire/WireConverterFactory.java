@@ -22,6 +22,7 @@ import java.lang.reflect.Type;
 import javax.annotation.Nullable;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import retrofit2.Call;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
 
@@ -31,11 +32,30 @@ import retrofit2.Retrofit;
  * <p>This converter only applies for types which extend from {@link Message}.
  */
 public final class WireConverterFactory extends Converter.Factory {
+  /**
+   * Create an instance which serializes request messages to bytes eagerly on the caller thread
+   * when either {@link Call#execute()} or {@link Call#enqueue} is called. Response bytes are
+   * always converted to message instances on one of OkHttp's background threads.
+   */
   public static WireConverterFactory create() {
-    return new WireConverterFactory();
+    return new WireConverterFactory(false);
   }
 
-  private WireConverterFactory() {}
+  private final boolean streaming;
+
+  private WireConverterFactory(boolean streaming) {
+    this.streaming = streaming;
+  }
+
+  /**
+   * Return a new factory which streams serialization of request messages to bytes on the HTTP thread
+   * This is either the calling thread for {@link Call#execute()}, or one of OkHttp's background
+   * threads for {@link Call#enqueue}. Response bytes are always converted to message instances on
+   * one of OkHttp's background threads.
+   */
+  public WireConverterFactory withStreaming() {
+    return new WireConverterFactory(true);
+  }
 
   @Override
   public @Nullable Converter<ResponseBody, ?> responseBodyConverter(
@@ -67,6 +87,6 @@ public final class WireConverterFactory extends Converter.Factory {
     }
     //noinspection unchecked
     ProtoAdapter<? extends Message> adapter = ProtoAdapter.get((Class<? extends Message>) c);
-    return new WireRequestBodyConverter<>(adapter);
+    return new WireRequestBodyConverter<>(adapter, streaming);
   }
 }

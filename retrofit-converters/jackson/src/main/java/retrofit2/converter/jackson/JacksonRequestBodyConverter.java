@@ -24,14 +24,20 @@ import retrofit2.Converter;
 final class JacksonRequestBodyConverter<T> implements Converter<T, RequestBody> {
   private final ObjectWriter adapter;
   private final MediaType mediaType;
+  private final boolean streaming;
 
-  JacksonRequestBodyConverter(ObjectWriter adapter, MediaType mediaType) {
+  JacksonRequestBodyConverter(ObjectWriter adapter, MediaType mediaType, boolean streaming) {
     this.adapter = adapter;
     this.mediaType = mediaType;
+    this.streaming = streaming;
   }
 
   @Override
   public RequestBody convert(T value) throws IOException {
+    if (streaming) {
+      return new JacksonStreamingRequestBody(adapter, value, mediaType);
+    }
+
     byte[] bytes = adapter.writeValueAsBytes(value);
     return RequestBody.create(mediaType, bytes);
   }

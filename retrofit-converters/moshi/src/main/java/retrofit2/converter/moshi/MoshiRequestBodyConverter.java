@@ -24,16 +24,22 @@ import okio.Buffer;
 import retrofit2.Converter;
 
 final class MoshiRequestBodyConverter<T> implements Converter<T, RequestBody> {
-  private static final MediaType MEDIA_TYPE = MediaType.get("application/json; charset=UTF-8");
+  static final MediaType MEDIA_TYPE = MediaType.get("application/json; charset=UTF-8");
 
   private final JsonAdapter<T> adapter;
+  private final boolean streaming;
 
-  MoshiRequestBodyConverter(JsonAdapter<T> adapter) {
+  MoshiRequestBodyConverter(JsonAdapter<T> adapter, boolean streaming) {
     this.adapter = adapter;
+    this.streaming = streaming;
   }
 
   @Override
   public RequestBody convert(T value) throws IOException {
+    if (streaming) {
+      return new MoshiStreamingRequestBody<>(adapter, value);
+    }
+
     Buffer buffer = new Buffer();
     JsonWriter writer = JsonWriter.of(buffer);
     adapter.toJson(writer, value);

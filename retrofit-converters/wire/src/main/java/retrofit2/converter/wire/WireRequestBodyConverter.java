@@ -24,16 +24,22 @@ import okio.Buffer;
 import retrofit2.Converter;
 
 final class WireRequestBodyConverter<T extends Message<T, ?>> implements Converter<T, RequestBody> {
-  private static final MediaType MEDIA_TYPE = MediaType.get("application/x-protobuf");
+  static final MediaType MEDIA_TYPE = MediaType.get("application/x-protobuf");
 
   private final ProtoAdapter<T> adapter;
+  private final boolean streaming;
 
-  WireRequestBodyConverter(ProtoAdapter<T> adapter) {
+  WireRequestBodyConverter(ProtoAdapter<T> adapter, boolean streaming) {
     this.adapter = adapter;
+    this.streaming = streaming;
   }
 
   @Override
   public RequestBody convert(T value) throws IOException {
+    if (streaming) {
+      return new WireStreamingRequestBody<>(adapter, value);
+    }
+
     Buffer buffer = new Buffer();
     adapter.encode(buffer, value);
     return RequestBody.create(MEDIA_TYPE, buffer.snapshot());
